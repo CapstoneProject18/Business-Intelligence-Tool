@@ -68,6 +68,15 @@ body <- dashboardBody(
                          ,valueBoxOutput("pred_q1")
                          ,valueBoxOutput("pred_q2")
                          ,valueBoxOutput("pred_if")
+              ),
+              box(
+                title = "MONTHLY SALES FORECAST"
+                ,status = "primary"
+                ,solidHeader = TRUE
+                ,collapsible = TRUE
+                ,height = "500px"
+                ,width = "300px"
+                ,ggvisOutput("plot1")
               )
     )),
     
@@ -96,6 +105,18 @@ body <- dashboardBody(
                        ,valueBoxOutput("Optimum_price")
                        ,valueBoxOutput("new_profit")
                        ,valueBoxOutput("new_sales")
+            ),
+            
+            box(
+              title = "Old Vs New Profit per Store"
+              ,status = "primary"
+              ,solidHeader = TRUE 
+              ,collapsible = TRUE
+              ,height = "500px" 
+              ,width = "300px"
+              # ,plotOutput("profitbyRegion", height = "300px")
+              ,ggvisOutput("plot")
+              
             )
     )
 )) 
@@ -238,6 +259,30 @@ shinyApp(
             ,color = "maroon")
           
         })
+        #----------------------------------------GRAPH------------------------------------
+        
+        month_data <- matrix(1:12, nrow=12,ncol=1)
+        month_data<-data.frame(month_data)
+        colnames(month_data) <- c("month")
+        print(month_data)
+        
+        qgsales_2 <- predict(m4,month_data,interval="p")
+        
+        qgsales_1 <- predict(m3,month_data,interval="p")
+        
+        s1 <- data.frame(qgsales_1[,1])
+        s2 <- data.frame(qgsales_2[,1])
+        
+        graph_data <- data.frame(cbind(month_data,s1,s2))
+        colnames(graph_data) <- c("Month","Product_1","Product_2")
+        
+        # profit_graph %>% ggvis(x= ~Stores) %>%
+        DT2 <- melt(graph_data, 'Month', c('Product_1','Product_2'))
+        DT2 %>% ggvis(~Month, ~value, stroke=~variable) %>% set_options(height = 460, width = 920) %>% layer_lines() %>%
+          add_axis("x", subdivide = 1, values = 1:12) %>%
+          add_axis( "y", title = "Monthly sales forecast")%>%
+          bind_shiny("plot1")
+        
       }
     }) 
     observe({     
@@ -396,6 +441,13 @@ shinyApp(
               ,color = "yellow")
             
           })
+          
+          # ----------------------------Graph----------------------------------
+          DT2 <- melt(profit_graph, 'Stores', c('Old_Profit','New_Profit'))
+          DT2 %>% ggvis(~Stores, ~value, stroke=~variable) %>% set_options(height = 460, width = 920) %>% layer_lines() %>%
+            add_axis("x", subdivide = 1, values = 1:nrow(profit_graph)) %>%
+            add_axis( "y", title = "Profit earned")%>%
+            bind_shiny("plot")
         }
       }
       
