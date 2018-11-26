@@ -78,7 +78,7 @@ body <- dashboardBody(
                 ,width = "300px"
                 ,ggvisOutput("plot1")
               )
-    )),
+            )),
     
     tabItem("profitmax",
             fluidPage(
@@ -94,7 +94,7 @@ body <- dashboardBody(
                   column(3, offset = 0,
                          style='padding:10px;',selectInput("Product_sales","Sales",choices = NULL )),
                   column(3, offset = 1,
-                         style='padding:10px;',selectInput("Region","Stores_info",choices = NULL )),
+                         style='padding:10px;',selectInput("Month","Month",choices = NULL )),
                   column(3, offset = 1,
                          style='padding:10px;',selectInput("Another_Product_SP","SP of other product",choices = NULL ))
               )),
@@ -119,7 +119,7 @@ body <- dashboardBody(
               
             )
     )
-)) 
+  )) 
 
 shinyApp(
   ui = dashboardPage(header, sidebar, body, skin='red'),
@@ -159,6 +159,10 @@ shinyApp(
       
       if((length(a)+length(b)+length(c)+length(d)+length(e)+length(f))==6)
       {
+        if(a==b || b==c || c==d || d==e || e==f || f==a || a==c || a==d || a==e || b==d || b==e || b==f || c==e || c==f || d==f)
+          showNotification("All six inputs must be unique!", type="error", duration = 10)
+        else
+        {  
         cp<-colnames(df)[a]
         sp1<-colnames(df)[b]
         q1<-colnames(df)[c]
@@ -283,6 +287,7 @@ shinyApp(
           add_axis( "y", title = "Monthly sales forecast")%>%
           bind_shiny("plot1")
         
+        }
       }
     }) 
     observe({     
@@ -317,24 +322,32 @@ shinyApp(
       adv_type<-input$ad_type
       tshirt_sp<-input$Another_Product_SP
       cost_price<-input$CP
-      region<-input$Region
+      month<-input$Month
       
       a<-grep(qty, colnames(df))
       b<-grep(sale_price, colnames(df))
       c<-grep(adv_type, colnames(df))
       d<-grep(tshirt_sp, colnames(df))
       e<-grep(cost_price, colnames(df))
-      f<-grep(region, colnames(df))
+      f<-grep(month, colnames(df))
       if((length(a)+length(b)+length(c)+length(d)+length(e)+length(f))==6)
       {
-        if(b!=d)
+        print(a)
+        print(b)
+        print(c)
+        print(d)
+        print(e)
+        print(f)
+        if(a==b || b==c || c==d || d==e || e==f || f==a || a==c || a==d || a==e || b==d || b==e || b==f || c==e || c==f || d==f)
+           showNotification("All six inputs must be unique!", type="error", duration = 10)
+        else
         {
           qty<-colnames(df)[a]
           sale_price<-colnames(df)[b]
           adv_type<-colnames(df)[c]
           tshirt_sp<-colnames(df)[d]
           cost_price<-colnames(df)[e]
-          region<-colnames(df)[f]
+          month<-colnames(df)[f]
           
           
           m3 <- lm(df[c(qty,sale_price,adv_type,tshirt_sp)])
@@ -449,6 +462,7 @@ shinyApp(
             add_axis( "y", title = "Profit earned")%>%
             bind_shiny("plot")
         }
+        
       }
       
     })
@@ -465,7 +479,7 @@ shinyApp(
       updateSelectInput(session, "Product_sales", choices = names(data.frame(contentsrea())), selected =input$Quantity1)
     })
     observe({
-      updateSelectInput(session, "Region", choices = names(data.frame(contentsrea())), selected ='NULL')
+      updateSelectInput(session, "Month", choices = names(data.frame(contentsrea())), selected ='NULL')
       
     })
     observe({
@@ -474,6 +488,4 @@ shinyApp(
     })
     
     #----------------------------------------PROFIT MAXIMIZATION ENDS---------------------------------------#
-})
-
-    
+  })
