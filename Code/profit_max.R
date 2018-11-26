@@ -389,7 +389,7 @@ shinyApp(
           old_avg_SP <- mean(df[,b])
           
           profit_graph <- data.frame(bind_cols(stores, old_profit, new_profit))
-          colnames(profit_graph) <- c( "Stores","Old_Profit","New_Profit")
+          colnames(profit_graph) <- c( "Month","Old_Profit","New_Profit")
           print(profit_graph)
           print(const)
           print(const2)
@@ -456,8 +456,8 @@ shinyApp(
           })
           
           # ----------------------------Graph----------------------------------
-          DT2 <- melt(profit_graph, 'Stores', c('Old_Profit','New_Profit'))
-          DT2 %>% ggvis(~Stores, ~value, stroke=~variable) %>% set_options(height = 460, width = 920) %>% layer_lines() %>%
+          DT2 <- melt(profit_graph, 'Month', c('Old_Profit','New_Profit'))
+          DT2 %>% ggvis(~Month, ~value, stroke=~variable) %>% set_options(height = 460, width = 920) %>% layer_lines() %>%
             add_axis("x", subdivide = 1, values = 1:nrow(profit_graph)) %>%
             add_axis( "y", title = "Profit earned")%>%
             bind_shiny("plot")
