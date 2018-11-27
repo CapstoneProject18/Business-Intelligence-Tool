@@ -46,7 +46,6 @@ body <- dashboardBody(
               box(title = "Attribute Selection", status = "primary", solidHeader = T, width = 12,
                   fluidPage(
                     fluidRow(
-                      
                       column(3,offset = 0, style='padding:10px;',
                              selectInput("CP1","Cost Price",choices = NULL)),
                       column(3,offset = 1,
@@ -56,7 +55,9 @@ body <- dashboardBody(
                       column(3, offset = 0,
                              style='padding:10px;',selectInput("Time","Time",choices = NULL )),
                       column(3, offset = 1,
-                             style='padding:10px;',selectInput("SP2","P2_SP",choices = NULL ))
+                             style='padding:10px;',selectInput("SP2","P2_SP",choices = NULL )),
+                      column(3, offset = 1,
+                             style='padding:10px;',selectInput("Ad_type","Ad Type",choices = NULL ))
                     ))),
               
               
@@ -64,7 +65,7 @@ body <- dashboardBody(
                          ,valueBoxOutput("pred_q1", width=6)
                          , valueBoxOutput("price_q1", width=6)
                          ,valueBoxOutput("price_q2", width=6)
-                         ),
+              ),
               box(
                 title = "MONTHLY SALES FORECAST"
                 ,status = "primary"
@@ -74,7 +75,18 @@ body <- dashboardBody(
                 ,width = "300px"
                 ,ggvisOutput("plot1")
               )
-            )),
+            ),
+            fluidRow(
+              box(title = "Enter the values against which you wich to predict sales", status = "primary", solidHeader = T, width = 5,
+                                               textInput("sales","Enter value of sales"),
+                                               textInput("adtype","Enter value of adtype"),
+                                               textInput("tshirt_p","Enter value of tshirt price"),
+                                               actionButton("submit", "Submit"))
+  
+                  ,fluidRow(valueBoxOutput("price_op", width=5)))
+            
+            
+            ),
     
     tabItem("profitmax",
             fluidPage(
@@ -111,8 +123,7 @@ body <- dashboardBody(
               ,height = "500px" 
               ,width = "300px"
               # ,plotOutput("profitbyRegion", height = "300px")
-              ,ggvisOutput("plot")
-              
+              ,ggvisOutput("plot")  
             )
     )
   )) 
@@ -144,25 +155,29 @@ shinyApp(
       q1<-input$Quantity1
       month<-input$Time
       sp2<-input$SP2
+      ad_type1=input$Ad_type
       
       a<-grep(cp, colnames(df))
       b<-grep(sp1, colnames(df))
       c<-grep(q1, colnames(df))
       d<-grep(month, colnames(df))
       e<-grep(sp2, colnames(df))
+      f<-grep(ad_type1, colnames(df))
+    
       
-      if((length(a)+length(b)+length(c)+length(d)+length(e))==5)
+      if((length(a)+length(b)+length(c)+length(d)+length(e)+length(f))==6)
       {
-        if(a==b || b==c || c==d || d==e || a==c || a==d || a==e || b==d || b==e || c==e)
+        if(a==b || b==c || c==d || d==e || e==f || f==a || a==c || a==d || a==e || b==d || b==e || b==f || c==e || c==f || d==f)
           showNotification("All six inputs must be unique!", type="error", duration = 10)
         else
         {  
-          cp<-colnames(df)[a]
-          sp1<-colnames(df)[b]
-          q1<-colnames(df)[c]
-          month<-colnames(df)[d]
-          sp2<-colnames(df)[e]
-          
+          cp=colnames(df)[a]
+          sp1=colnames(df)[b]
+          q1=colnames(df)[c]
+          month=colnames(df)[d]
+          sp2=colnames(df)[e]
+          ad_type1=colnames(df)[f]
+        
           
           #------------------------PRODUCT 1 ANALYSIS-----------------------------------------
           
@@ -212,12 +227,8 @@ shinyApp(
             
           })
           
-          #------------------------SALES MAXIMISATION----------------------------------
-          
-          #To be added
-          
           # ----------------------------------------GRAPH------------------------------------
-
+          
           pred_demand=as.data.frame(append(df[,c],values_pred[1:6,1]))
           time=as.data.frame(c(1:36))
           
@@ -231,9 +242,40 @@ shinyApp(
             add_axis("x", subdivide = 1, values = 1:nrow(demand_graph)) %>%
             add_axis( "y", title = "Predicted Demand")%>%
             bind_shiny("plot1")
-
+          
+          
+      #-------------------------------------Sales prediction------------------------------
+          
+          model=lm(df[c(q1,sp1,ad_type1,sp2)])
+          
+          intercept=as.numeric(model$coefficients["(Intercept)"] )
+          price_coeff=as.numeric(model$coefficients[sp1] )
+          ad_coeff=as.numeric(model$coefficients[ad_type1] )
+          tshirt_coeff=as.numeric(model$coefficients[sp2] )
+          
+          observeEvent( input$submit, 
+                        {
+                          sales_inp=as.numeric(input$sales) 
+                          adtype_inp=as.numeric(input$adtype)
+                          tshirt_inp=as.numeric(input$tshirt_p)
+                          
+                          price=(sales_inp-((ad_coeff*adtype_inp)+(tshirt_coeff*tshirt_inp)+intercept))/price_coeff
+                          
+                          
+                          output$price_op <- renderValueBox({
+                            valueBox(
+                              formatC(price, format="d", big.mark=',')
+                              ,paste('--REQUIRED SELLING PRICE OF THE PRODUCT: ',format(price), nsmall = 2)
+                              ,icon = icon("stats",lib='glyphicon')
+                              ,color = "yellow")
+                            
+                          })
+                        })
+          
         }
       }
+      
+      
     }) 
     observe({     
       updateSelectInput(session, "Quantity1", choices = names(data.frame(contentsrea())),selected='NULL')
@@ -251,6 +293,13 @@ shinyApp(
       updateSelectInput(session, "CP1", choices = names(data.frame(contentsrea())),selected='NULL')
       
     })
+    observe({
+      updateSelectInput(session, "Ad_type", choices = names(data.frame(contentsrea())),selected='NULL')
+      
+    })
+    
+    
+
     #----------------------------------------INVENTORY MANAGEMENT ENDS---------------------------------------#
     
     #----------------------------------------PROFIT MAXIMIZATION STARTS---------------------------------------#
@@ -273,12 +322,12 @@ shinyApp(
       f<-grep(month, colnames(df))
       if((length(a)+length(b)+length(c)+length(d)+length(e)+length(f))==6)
       {
-        print(a)
-        print(b)
-        print(c)
-        print(d)
-        print(e)
-        print(f)
+        # print(a)
+        # print(b)
+        # print(c)
+        # print(d)
+        # print(e)
+        # print(f)
         if(a==b || b==c || c==d || d==e || e==f || f==a || a==c || a==d || a==e || b==d || b==e || b==f || c==e || c==f || d==f)
           showNotification("All six inputs must be unique!", type="error", duration = 10)
         else
@@ -414,13 +463,13 @@ shinyApp(
       updateSelectInput(session, "CP", choices = names(data.frame(contentsrea())), selected = input$CP1)
     })
     observe({
-      updateSelectInput(session, "ad_type", choices = names(data.frame(contentsrea())), selected ='NULL')
+      updateSelectInput(session, "ad_type", choices = names(data.frame(contentsrea())), selected =input$Ad_type)
     })
     observe({
       updateSelectInput(session, "Product_sales", choices = names(data.frame(contentsrea())), selected =input$Quantity1)
     })
     observe({
-      updateSelectInput(session, "Month", choices = names(data.frame(contentsrea())), selected ='NULL')
+      updateSelectInput(session, "Month", choices = names(data.frame(contentsrea())), selected =input$Time)
       
     })
     observe({
