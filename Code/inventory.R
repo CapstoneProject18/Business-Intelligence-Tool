@@ -168,7 +168,8 @@ shinyApp(
           
           # library("tseries")
           # adf.test(diff(log(data_final)), alternative="stationary", k=0)
-          
+          library(forecast)
+          library(tseries)
           data_final=ts(df[,c])
           fit=auto.arima(data_final,seasonal=FALSE)
           fcast=forecast(fit, h=6)
