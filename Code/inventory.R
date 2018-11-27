@@ -20,11 +20,10 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Data", icon = icon("bar-chart-o"), tabName = "data"),
     menuItem("Analysis", icon = icon("bar-chart-o"), tabName = "analysis",
-             menuItem("Inventory Management", icon = icon("bar-chart-o"), tabName = "inventmgt")
-             
+             menuItem("Inventory Management", icon = icon("bar-chart-o"), tabName = "inventmgt"),
+             menuItem("Profit Maximization", icon = icon("bar-chart-o"), tabName = "profitmax"))
   )
-))
-
+)
 
 #Define the UI's body
 body <- dashboardBody(
@@ -38,7 +37,8 @@ body <- dashboardBody(
             fluidPage(fluidRow(column(12,offset=0, style='overflow-x: scroll',tableOutput('table'))))
             
     ),
-   
+    
+    
     tabItem("inventmgt",
             fluidPage(
               titlePanel(fluidRow(column(9, offset=2))),
@@ -115,8 +115,7 @@ body <- dashboardBody(
               
             )
     )
-  ))
-
+  )) 
 
 shinyApp(
   ui = dashboardPage(header, sidebar, body, skin='red'),
