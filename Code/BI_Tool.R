@@ -127,7 +127,7 @@ body <- dashboardBody(
             )
     )
   )) 
-flag <<- 0
+
 shinyApp(
   ui = dashboardPage(header, sidebar, body, skin='red'),
   server = function(input, output,session) {
@@ -138,7 +138,45 @@ shinyApp(
         return(NULL)
       read.csv(inFile$datapath,header=T)
     })
-    #----------------------------------------INVENTORY MANAGEMENT---------------------------------------#
+    #-------------------------------------------- ERROR CHECKING ------------------------------------------------#
+    observe({
+      
+      
+      df<-contentsrea()
+      
+      cp<-input$CP1
+      sp1<-input$SP1
+      q1<-input$Quantity1
+      month<-input$Time
+      sp2<-input$SP2
+      ad_type1=input$Ad_type
+      
+      a<-grep(cp, colnames(df))
+      b<-grep(sp1, colnames(df))
+      c<-grep(q1, colnames(df))
+      d<-grep(month, colnames(df))
+      e<-grep(sp2, colnames(df))
+      f<-grep(ad_type1, colnames(df))
+      
+      
+  
+      
+      if((length(a)+length(b)+length(c)+length(d)+length(e)+length(f))==6)
+      {
+        
+        if((a==b || b==c || c==d || d==e || e==f || f==a || a==c || a==d || a==e || b==d || b==e || b==f || c==e || c==f || d==f))
+        {
+          
+          showNotification("All six inputs must be unique!", type="error", duration = 10)
+          
+        }
+    
+      }
+      
+  })
+    #----------------------------------------ERROR CHECKING---------------------------------------------#
+   
+     #----------------------------------------INVENTORY MANAGEMENT---------------------------------------#
     
     observe({
       
@@ -167,16 +205,10 @@ shinyApp(
       
       if((length(a)+length(b)+length(c)+length(d)+length(e)+length(f))==6)
       {
-        if((a==b || b==c || c==d || d==e || e==f || f==a || a==c || a==d || a==e || b==d || b==e || b==f || c==e || c==f || d==f) && flag==0)
-        {
-          print(flag)
-          showNotification("All six inputs must be unique!", type="error", duration = 10)
-          assign("flag", 1, envir = .GlobalEnv)
-          print("invt")
-        }
-        else
+        
+        if(a!=b && b!=c && c!=d && d!=e && e!=f && f!=a && a!=c && a!=d && a!=e && b!=d && b!=e && b!=f && c!=e && c!=f && d!=f)
         { 
-          assign("flag", 0, envir = .GlobalEnv)
+          
           cp=colnames(df)[a]
           sp1=colnames(df)[b]
           q1=colnames(df)[c]
@@ -328,23 +360,9 @@ shinyApp(
       f<-grep(month, colnames(df))
       if((length(a)+length(b)+length(c)+length(d)+length(e)+length(f))==6)
       {
-        # print(a)
-        # print(b)
-        # print(c)
-        # print(d)
-        # print(e)
-        # print(f)
-        if((a==b || b==c || c==d || d==e || e==f || f==a || a==c || a==d || a==e || b==d || b==e || b==f || c==e || c==f || d==f) && flag==0)
+        if(a!=b && b!=c && c!=d && d!=e && e!=f && f!=a && a!=c && a!=d && a!=e && b!=d && b!=e && b!=f && c!=e && c!=f && d!=f)
         {
-          print(flag)
-          showNotification("All six inputs must be unique!", type="error", duration = 10)
-          assign("flag", 1, envir = .GlobalEnv)
-          print("profitmax")
-          
-        }
-        else
-        {
-          assign("flag", 0, envir = .GlobalEnv)
+        
           qty<-colnames(df)[a]
           sale_price<-colnames(df)[b]
           adv_type<-colnames(df)[c]
