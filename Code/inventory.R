@@ -1,6 +1,6 @@
 #---------------------------------------------------------------------------------------------#
 # Title: Inventory Management
-# Authors: Shivangi Tak, Shivam Ratnakar
+# Authors: Shivangi Tak
 #---------------------------------------------------------------------------------------------#
 
 #Import the following libraries.
@@ -127,7 +127,7 @@ body <- dashboardBody(
             )
     )
   )) 
-flag <<- 0
+
 shinyApp(
   ui = dashboardPage(header, sidebar, body, skin='red'),
   server = function(input, output,session) {
@@ -167,16 +167,10 @@ shinyApp(
       
       if((length(a)+length(b)+length(c)+length(d)+length(e)+length(f))==6)
       {
-        if((a==b || b==c || c==d || d==e || e==f || f==a || a==c || a==d || a==e || b==d || b==e || b==f || c==e || c==f || d==f) && flag==0)
-          {
-            print(flag)
-            showNotification("All six inputs must be unique!", type="error", duration = 10)
-            assign("flag", 1, envir = .GlobalEnv)
-            print("invt")
-          }
+        if(a==b || b==c || c==d || d==e || e==f || f==a || a==c || a==d || a==e || b==d || b==e || b==f || c==e || c==f || d==f)
+          showNotification("All six inputs must be unique!", type="error", duration = 10)
         else
-        { 
-          assign("flag", 0, envir = .GlobalEnv)
+        {  
           cp=colnames(df)[a]
           sp1=colnames(df)[b]
           q1=colnames(df)[c]
@@ -334,17 +328,10 @@ shinyApp(
         # print(d)
         # print(e)
         # print(f)
-        if((a==b || b==c || c==d || d==e || e==f || f==a || a==c || a==d || a==e || b==d || b==e || b==f || c==e || c==f || d==f) && flag==0)
-        {
-          print(flag)
+        if(a==b || b==c || c==d || d==e || e==f || f==a || a==c || a==d || a==e || b==d || b==e || b==f || c==e || c==f || d==f)
           showNotification("All six inputs must be unique!", type="error", duration = 10)
-          assign("flag", 1, envir = .GlobalEnv)
-          print("profitmax")
-        
-        }
         else
         {
-          assign("flag", 0, envir = .GlobalEnv)
           qty<-colnames(df)[a]
           sale_price<-colnames(df)[b]
           adv_type<-colnames(df)[c]
