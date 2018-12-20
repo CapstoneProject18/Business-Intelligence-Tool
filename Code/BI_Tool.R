@@ -593,9 +593,7 @@ shinyApp(
       { 
         cat_col<-colnames(df)[f]
       effect_col<-colnames(df)[c]
-
-
-    
+        
     noad=filter(df,df[,f]==0)
     noad=data.frame(noad[,c])
     colnames(noad) <- c("noad")
@@ -618,9 +616,7 @@ shinyApp(
         formatC(mean(ad[,1]), format="d", big.mark=',')
         ,paste('--Average value when Ad_Type is 1 : ',format((mean(ad[,1])), nsmall = 2))
         ,icon = icon("stats",lib='glyphicon')
-        ,color = "maroon")
-      
-    })
+        ,color = "maroon")     })
     
     num=data.frame(c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15))
     colnames(num) <- c("instances")
@@ -640,13 +636,11 @@ shinyApp(
       add_axis("x", title = "X", subdivide = 1, values = 1:nrow(ad_graph)) %>%
       add_axis( "y", title = "Values (with/without sales)")%>%
       bind_shiny("adgraph")
-        }
-      
+        }      
     })
+
     
-    
-    observe({
-      
+    observe({      
       df<-contentsrea()
       col1=input$col1
       col2=input$col2
@@ -687,5 +681,5 @@ shinyApp(
     })
        
     #------------------------------------DEPENDANCY ANALYSIS ENDS------------------------------------------              
-    
+   
   })
