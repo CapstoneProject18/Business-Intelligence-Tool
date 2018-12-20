@@ -20,8 +20,10 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Data", icon = icon("bar-chart-o"), tabName = "data"),
     menuItem("Analysis", icon = icon("bar-chart-o"), tabName = "analysis",
-             menuItem("Inventory Management", icon = icon("bar-chart-o"), tabName = "inventmgt"),
-             menuItem("Profit Maximization", icon = icon("bar-chart-o"), tabName = "profitmax"))
+             menuItem("Demand Forecasting", icon = icon("bar-chart-o"), tabName = "inventmgt"),
+             menuItem("Profit Maximization", icon = icon("bar-chart-o"), tabName = "profitmax"),
+             menuItem("Dependancy Analysis", icon = icon("bar-chart-o"), tabName = "abtest"))
+
   )
 )
 
@@ -88,6 +90,43 @@ body <- dashboardBody(
             
     ),
     
+    
+    tabItem("abtest",
+            fluidPage(
+              titlePanel(fluidRow(column(9, offset=2))),
+
+              box(title = "Attribute Selection", status = "primary", solidHeader = T, width = 12,    
+                  column(5,offset = 0, style='padding:10px;',
+                         selectInput("cat_col","Categorical Attribute",choices = NULL)),
+                  column(5,offset = 1,
+                         style='padding:10px;',selectInput("effect_col","Dependant Attribute",choices = NULL))
+              ),
+              
+              fluidRow(  valueBoxOutput("one_ad", width=6)
+                         ,valueBoxOutput("ad_zero", width=6)
+              ),
+              box(
+                title = "COMPARISION GRAPH"
+                ,status = "primary"
+                ,solidHeader = TRUE
+                ,collapsible = TRUE
+                ,height = "500px"
+                ,width = "300px"
+                ,ggvisOutput("adgraph")
+              )
+            ),
+            fluidRow(
+              box(title = "Enter the columns between which you wish to see the correlation", status = "primary", solidHeader = T, width = 6
+                  ,column(5,offset = 0, style='padding:10px;',
+                         selectInput("col1","Attribute 1",choices = NULL)),
+                  column(5,offset = 1,
+                         style='padding:10px;',selectInput("col2","Attribute 2",choices = NULL)))
+              
+              ,fluidRow(valueBoxOutput("corr", width=5))
+              )
+            
+    ),
+    
     tabItem("profitmax",
             fluidPage(
               titlePanel(fluidRow(column(9, offset=3))),
@@ -124,8 +163,9 @@ body <- dashboardBody(
               ,width = "300px"
               # ,plotOutput("profitbyRegion", height = "300px")
               ,ggvisOutput("plot")  
-            )
-    )
+            ))
+    
+    
   )) 
 
 shinyApp(
@@ -138,7 +178,7 @@ shinyApp(
         return(NULL)
       read.csv(inFile$datapath,header=T)
     })
-    #-------------------------------------------- ERROR CHECKING ------------------------------------------------#
+    #-------------------------------------------- ERROR CHECKING STARTS ------------------------------------------------#
     observe({
       
       
@@ -151,15 +191,15 @@ shinyApp(
       sp2<-input$SP2
       ad_type1=input$Ad_type
       
+      
       a<-grep(cp, colnames(df))
       b<-grep(sp1, colnames(df))
       c<-grep(q1, colnames(df))
       d<-grep(month, colnames(df))
       e<-grep(sp2, colnames(df))
-      f<-grep(ad_type1, colnames(df))
+      f=grep(ad_type1, colnames(df))
+
       
-      
-  
       
       if((length(a)+length(b)+length(c)+length(d)+length(e)+length(f))==6)
       {
@@ -167,16 +207,15 @@ shinyApp(
         if((a==b || b==c || c==d || d==e || e==f || f==a || a==c || a==d || a==e || b==d || b==e || b==f || c==e || c==f || d==f))
         {
           
-          showNotification("All six inputs must be unique!", type="error", duration = 10)
+          showNotification("All six inputs must be unique!", type="error", duration = 5)
           
         }
-    
+        
       }
       
-  })
-    #----------------------------------------ERROR CHECKING---------------------------------------------#
-   
-     #----------------------------------------INVENTORY MANAGEMENT---------------------------------------#
+    })
+    #----------------------------------------ERROR CHECKING ENDS---------------------------------------------#
+    
     
     observe({
       
@@ -215,6 +254,8 @@ shinyApp(
           month=colnames(df)[d]
           sp2=colnames(df)[e]
           ad_type1=colnames(df)[f]
+
+          #----------------------------------------INVENTORY MANAGEMENT STARTS---------------------------------------#
           
           
           #------------------------PRODUCT 1 ANALYSIS-----------------------------------------
@@ -335,8 +376,7 @@ shinyApp(
       updateSelectInput(session, "Ad_type", choices = names(data.frame(contentsrea())),selected='NULL')
       
     })
-    
-    
+
     
     #----------------------------------------INVENTORY MANAGEMENT ENDS---------------------------------------#
     
@@ -362,7 +402,7 @@ shinyApp(
       {
         if(a!=b && b!=c && c!=d && d!=e && e!=f && f!=a && a!=c && a!=d && a!=e && b!=d && b!=e && b!=f && c!=e && c!=f && d!=f)
         {
-        
+          
           qty<-colnames(df)[a]
           sale_price<-colnames(df)[b]
           adv_type<-colnames(df)[c]
@@ -478,7 +518,9 @@ shinyApp(
           
           # ----------------------------Graph----------------------------------
           DT2 <- melt(profit_graph, 'Month', c('Old_Profit','New_Profit'))
-          DT2 %>% ggvis(~Month, ~value, stroke=~variable) %>% set_options(height = 460, width = 920) %>% layer_lines() %>%
+          DT2 %>% ggvis(~Month, ~value, stroke=~variable) %>% set_options(height = 460, width = 920) %>% 
+            layer_points() %>% 
+            add_tooltip(function(data){paste0("VALUE: ", data$value)}, "hover") %>% layer_lines() %>%
             add_axis("x", subdivide = 1, values = 1:nrow(profit_graph)) %>%
             add_axis( "y", title = "Profit earned")%>%
             bind_shiny("plot")
@@ -509,4 +551,141 @@ shinyApp(
     })
     
     #----------------------------------------PROFIT MAXIMIZATION ENDS---------------------------------------#
+    
+    #------------------------------------DEPENDANCY ANALYSIS STARTS--------------------------------------------
+    
+    observe({
+      
+      df<-contentsrea()
+      
+      cat_col1=input$cat_col
+      dep_col=input$effect_col
+      
+      f=grep(cat_col1, colnames(df))
+      c=grep(dep_col, colnames(df))
+
+      if((length(f)+length(c))==2)
+      {
+        
+        if((f==c || c==f))
+        {
+          
+          showNotification("Both inputs must be unique!", type="error", duration = 5)
+          
+        }
+        
+      }
+      
+    })
+    
+    observe({
+      df<-contentsrea()
+      
+      
+      cat_col1=input$cat_col
+      dep_col=input$effect_col
+    
+      
+      f=grep(cat_col1, colnames(df))
+      c=grep(dep_col, colnames(df))
+      
+      if((length(f)+length(c))==2)
+      { 
+        cat_col<-colnames(df)[f]
+      effect_col<-colnames(df)[c]
+
+
+    
+    noad=filter(df,df[,f]==0)
+    noad=data.frame(noad[,c])
+    colnames(noad) <- c("noad")
+    
+    ad=filter(df,df[,f]==1)
+    ad=data.frame(ad[,c])
+    colnames(ad) <- c("ad")
+    
+    output$ad_zero <- renderValueBox({
+      valueBox(
+        formatC(mean(noad[,1]), format="d", big.mark=',')
+        ,paste('--Average value when Ad_Type is 0 : ',format((mean(noad[,1])), nsmall = 2))
+        ,icon = icon("stats",lib='glyphicon')
+        ,color = "maroon")
+      
+    })
+    
+    output$one_ad <- renderValueBox({
+      valueBox(
+        formatC(mean(ad[,1]), format="d", big.mark=',')
+        ,paste('--Average value when Ad_Type is 1 : ',format((mean(ad[,1])), nsmall = 2))
+        ,icon = icon("stats",lib='glyphicon')
+        ,color = "maroon")
+      
+    })
+    
+    num=data.frame(c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15))
+    colnames(num) <- c("instances")
+    
+    print("**************************")
+    print(ad)
+    print(noad)
+    print(num)
+    print("**************************")
+    ad_graph <- data.frame(bind_cols(num, noad, ad))
+    colnames(ad_graph) <- c( "num","Without_Advertisement","With_Advertisement")
+    
+    DT2 <- melt(ad_graph, 'num', c('Without_Advertisement','With_Advertisement'))
+    DT2 %>% ggvis(~num, ~value, stroke=~variable) %>% set_options(height = 460, width = 920) %>% 
+      layer_points() %>% 
+      add_tooltip(function(data){paste0("VALUE: ", data$value)}, "hover") %>% layer_lines() %>%
+      add_axis("x", title = "X", subdivide = 1, values = 1:nrow(ad_graph)) %>%
+      add_axis( "y", title = "Values (with/without sales)")%>%
+      bind_shiny("adgraph")
+        }
+      
+    })
+    
+    
+    observe({
+      
+      df<-contentsrea()
+      col1=input$col1
+      col2=input$col2
+      
+      a=grep(col1, colnames(df))
+      b=grep(col2, colnames(df))
+   
+      
+      if((length(a)+length(b))==2)
+      { 
+        
+        col1=colnames(df)[a]
+        col2=colnames(df)[b]
+      
+    output$corr <- renderValueBox({
+      valueBox(
+        formatC(paste(format(cor(df[,a],df[,b]), nsmall = 2)), format="d", big.mark=',')
+        ,paste('Value of correlation between Attribute 1 and Attribute 2 ')
+        ,icon = icon("stats",lib='glyphicon')
+        ,color = "navy")
+      
+    })
+      }
+    
+    })
+
+    observe({
+      updateSelectInput(session, "cat_col", choices = names(data.frame(contentsrea())),selected='NULL')
+      })
+    observe({
+      updateSelectInput(session, "effect_col", choices = names(data.frame(contentsrea())),selected='NULL')
+    })  
+    observe({
+      updateSelectInput(session, "col1", choices = names(data.frame(contentsrea())),selected='NULL')
+    })
+    observe({
+      updateSelectInput(session, "col2", choices = names(data.frame(contentsrea())),selected='NULL')
+    })
+       
+    #------------------------------------DEPENDANCY ANALYSIS ENDS------------------------------------------              
+    
   })
