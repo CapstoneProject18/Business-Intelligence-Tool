@@ -18,18 +18,24 @@ header <- dashboardHeader(title = "Sales BI Tool")
 #Sidebar navigator menu items
 sidebar <- dashboardSidebar(
   sidebarMenu(
+    menuItem("Overview", icon = icon("bar-chart-o"), tabName = "overview"),
     menuItem("Data", icon = icon("bar-chart-o"), tabName = "data"),
     menuItem("Analysis", icon = icon("bar-chart-o"), tabName = "analysis",
              menuItem("Demand Forecasting", icon = icon("bar-chart-o"), tabName = "inventmgt"),
              menuItem("Profit Maximization", icon = icon("bar-chart-o"), tabName = "profitmax"),
              menuItem("Dependancy Analysis", icon = icon("bar-chart-o"), tabName = "abtest"))
-
+    
   )
 )
 
 #Define the UI's body
 body <- dashboardBody(
   tabItems(
+    tabItem("overview",
+            fluidPage(
+              tags$iframe(style="height:680px; width:100%", src="BI Tool.pdf"))
+    ),
+    
     tabItem("data",
             fluidRow(
               
@@ -94,7 +100,7 @@ body <- dashboardBody(
     tabItem("abtest",
             fluidPage(
               titlePanel(fluidRow(column(9, offset=2))),
-
+              
               box(title = "Attribute Selection", status = "primary", solidHeader = T, width = 12,    
                   column(5,offset = 0, style='padding:10px;',
                          selectInput("cat_col","Categorical Attribute",choices = NULL)),
@@ -118,12 +124,12 @@ body <- dashboardBody(
             fluidRow(
               box(title = "Enter the columns between which you wish to see the correlation", status = "primary", solidHeader = T, width = 6
                   ,column(5,offset = 0, style='padding:10px;',
-                         selectInput("col1","Attribute 1",choices = NULL)),
+                          selectInput("col1","Attribute 1",choices = NULL)),
                   column(5,offset = 1,
                          style='padding:10px;',selectInput("col2","Attribute 2",choices = NULL)))
               
               ,fluidRow(valueBoxOutput("corr", width=5))
-              )
+            )
             
     ),
     
@@ -198,7 +204,7 @@ shinyApp(
       d<-grep(month, colnames(df))
       e<-grep(sp2, colnames(df))
       f=grep(ad_type1, colnames(df))
-
+      
       
       
       if((length(a)+length(b)+length(c)+length(d)+length(e)+length(f))==6)
@@ -254,7 +260,7 @@ shinyApp(
           month=colnames(df)[d]
           sp2=colnames(df)[e]
           ad_type1=colnames(df)[f]
-
+          
           #----------------------------------------INVENTORY MANAGEMENT STARTS---------------------------------------#
           
           
@@ -376,7 +382,7 @@ shinyApp(
       updateSelectInput(session, "Ad_type", choices = names(data.frame(contentsrea())),selected='NULL')
       
     })
-
+    
     
     #----------------------------------------INVENTORY MANAGEMENT ENDS---------------------------------------#
     
@@ -563,7 +569,7 @@ shinyApp(
       
       f=grep(cat_col1, colnames(df))
       c=grep(dep_col, colnames(df))
-
+      
       if((length(f)+length(c))==2)
       {
         
@@ -584,7 +590,7 @@ shinyApp(
       
       cat_col1=input$cat_col
       dep_col=input$effect_col
-    
+      
       
       f=grep(cat_col1, colnames(df))
       c=grep(dep_col, colnames(df))
@@ -592,53 +598,53 @@ shinyApp(
       if((length(f)+length(c))==2)
       { 
         cat_col<-colnames(df)[f]
-      effect_col<-colnames(df)[c]
+        effect_col<-colnames(df)[c]
         
-    noad=filter(df,df[,f]==0)
-    noad=data.frame(noad[,c])
-    colnames(noad) <- c("noad")
-    
-    ad=filter(df,df[,f]==1)
-    ad=data.frame(ad[,c])
-    colnames(ad) <- c("ad")
-    
-    output$ad_zero <- renderValueBox({
-      valueBox(
-        formatC(mean(noad[,1]), format="d", big.mark=',')
-        ,paste('--Average value when Ad_Type is 0 : ',format((mean(noad[,1])), nsmall = 2))
-        ,icon = icon("stats",lib='glyphicon')
-        ,color = "maroon")
-      
+        noad=filter(df,df[,f]==0)
+        noad=data.frame(noad[,c])
+        colnames(noad) <- c("noad")
+        
+        ad=filter(df,df[,f]==1)
+        ad=data.frame(ad[,c])
+        colnames(ad) <- c("ad")
+        
+        output$ad_zero <- renderValueBox({
+          valueBox(
+            formatC(mean(noad[,1]), format="d", big.mark=',')
+            ,paste('--Average value when Ad_Type is 0 : ',format((mean(noad[,1])), nsmall = 2))
+            ,icon = icon("stats",lib='glyphicon')
+            ,color = "maroon")
+          
+        })
+        
+        output$one_ad <- renderValueBox({
+          valueBox(
+            formatC(mean(ad[,1]), format="d", big.mark=',')
+            ,paste('--Average value when Ad_Type is 1 : ',format((mean(ad[,1])), nsmall = 2))
+            ,icon = icon("stats",lib='glyphicon')
+            ,color = "maroon")     })
+        
+        num=data.frame(c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15))
+        colnames(num) <- c("instances")
+        
+        print("**************************")
+        print(ad)
+        print(noad)
+        print(num)
+        print("**************************")
+        ad_graph <- data.frame(bind_cols(num, noad, ad))
+        colnames(ad_graph) <- c( "num","Without_Advertisement","With_Advertisement")
+        
+        DT2 <- melt(ad_graph, 'num', c('Without_Advertisement','With_Advertisement'))
+        DT2 %>% ggvis(~num, ~value, stroke=~variable) %>% set_options(height = 460, width = 920) %>% 
+          layer_points() %>% 
+          add_tooltip(function(data){paste0("VALUE: ", data$value)}, "hover") %>% layer_lines() %>%
+          add_axis("x", title = "X", subdivide = 1, values = 1:nrow(ad_graph)) %>%
+          add_axis( "y", title = "Values (with/without sales)")%>%
+          bind_shiny("adgraph")
+      }      
     })
     
-    output$one_ad <- renderValueBox({
-      valueBox(
-        formatC(mean(ad[,1]), format="d", big.mark=',')
-        ,paste('--Average value when Ad_Type is 1 : ',format((mean(ad[,1])), nsmall = 2))
-        ,icon = icon("stats",lib='glyphicon')
-        ,color = "maroon")     })
-    
-    num=data.frame(c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15))
-    colnames(num) <- c("instances")
-    
-    print("**************************")
-    print(ad)
-    print(noad)
-    print(num)
-    print("**************************")
-    ad_graph <- data.frame(bind_cols(num, noad, ad))
-    colnames(ad_graph) <- c( "num","Without_Advertisement","With_Advertisement")
-    
-    DT2 <- melt(ad_graph, 'num', c('Without_Advertisement','With_Advertisement'))
-    DT2 %>% ggvis(~num, ~value, stroke=~variable) %>% set_options(height = 460, width = 920) %>% 
-      layer_points() %>% 
-      add_tooltip(function(data){paste0("VALUE: ", data$value)}, "hover") %>% layer_lines() %>%
-      add_axis("x", title = "X", subdivide = 1, values = 1:nrow(ad_graph)) %>%
-      add_axis( "y", title = "Values (with/without sales)")%>%
-      bind_shiny("adgraph")
-        }      
-    })
-
     
     observe({      
       df<-contentsrea()
@@ -647,29 +653,29 @@ shinyApp(
       
       a=grep(col1, colnames(df))
       b=grep(col2, colnames(df))
-   
+      
       
       if((length(a)+length(b))==2)
       { 
         
         col1=colnames(df)[a]
         col2=colnames(df)[b]
-      
-    output$corr <- renderValueBox({
-      valueBox(
-        formatC(paste(format(cor(df[,a],df[,b]), nsmall = 2)), format="d", big.mark=',')
-        ,paste('Value of correlation between Attribute 1 and Attribute 2 ')
-        ,icon = icon("stats",lib='glyphicon')
-        ,color = "navy")
-      
-    })
+        
+        output$corr <- renderValueBox({
+          valueBox(
+            formatC(paste(format(cor(df[,a],df[,b]), nsmall = 2)), format="d", big.mark=',')
+            ,paste('Value of correlation between Attribute 1 and Attribute 2 ')
+            ,icon = icon("stats",lib='glyphicon')
+            ,color = "navy")
+          
+        })
       }
-    
+      
     })
-
+    
     observe({
       updateSelectInput(session, "cat_col", choices = names(data.frame(contentsrea())),selected='NULL')
-      })
+    })
     observe({
       updateSelectInput(session, "effect_col", choices = names(data.frame(contentsrea())),selected='NULL')
     })  
@@ -679,7 +685,7 @@ shinyApp(
     observe({
       updateSelectInput(session, "col2", choices = names(data.frame(contentsrea())),selected='NULL')
     })
-       
+    
     #------------------------------------DEPENDANCY ANALYSIS ENDS------------------------------------------              
-   
+    
   })
